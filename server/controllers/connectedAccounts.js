@@ -22,7 +22,8 @@ module.exports = (app) => {
         .then(u => u || User.create({
           name: profile.displayName,
           avatar: avatar || profile.avatar_url,
-          email: emails[0]
+          email: emails[0],
+          website: `https://github.com/${profile.username}`
         }))
         .tap(u => user = u)
         .tap(user => attrs.UserId = user.id)
