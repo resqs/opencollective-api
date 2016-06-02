@@ -2,7 +2,6 @@
 
 'use strict';
 
-const Promise = require('bluebird');
 const app = require('../index');
 const GitHubClient = require('opencollective-jobs').GitHubClient;
 const Group = app.set('models').Group;
@@ -44,4 +43,7 @@ Group.findAll({
       .catch(err => {
         console.log(`WARNING: ${err.message}`);
       })
+  })
+  .finally(() => {
+    process.exit();
   });
