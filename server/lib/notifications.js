@@ -15,7 +15,7 @@ module.exports = (Sequelize, activity) => {
       }))
     // process notification entries
     .then(() => {
-      if(!activity.GroupId || !activity.type) {
+      if(!activity.group.id || !activity.type) {
         return Promise.resolve([]);
       }
       return Sequelize.models.Notification.findAll({
@@ -24,7 +24,7 @@ module.exports = (Sequelize, activity) => {
             activityType.ACTIVITY_ALL,
             activity.type
           ],
-          GroupId: activity.GroupId,
+          GroupId: activity.group.id,
           // for now, only handle gitter and slack webhooks in this lib
           // TODO sdubois: move email + internal slack channels to this lib
           channel: ['gitter', 'slack'],
@@ -43,7 +43,7 @@ module.exports = (Sequelize, activity) => {
         }
       }))
     .catch(err => {
-      console.error(`Error while publishing activity type ${activity.type} for group ${activity.GroupId}`, err);
+      console.error(`Error while publishing activity type ${activity.type} for group ${activity.group.id}`, err);
     });
 };
 
