@@ -26,22 +26,38 @@ module.exports = app => {
       }
     }
 
-    return models.Transaction.create({
-      // TODO expense currency might be different from group currency, how to convert?
-      netAmountInGroupCurrency: -expense.amount,
-      ExpenseId: expense.id,
-      // TODO remove #postmigration, info redundant with joined tables?
-      type: expenseType,
-      amount: -expense.amount/100,
-      currency: expense.currency,
-      description: expense.title,
-      status: 'REIMBURSED',
-      reimbursedAt: new Date(),
-      UserId,
-      GroupId: expense.GroupId,
-      payoutMethod
-      // end TODO remove #postmigration
-    })
+    let netAmountInGroupCurrency;
+    if (!paymentMethod.data || !paymentMethod.data.curPaymentsAmount) {
+      console.warn(`Missing historical preapprovalDetails data, can't compute transaction amount in group currency (paymentMethod ID ${paymentMethod.id}, expense ID ${expense.id})`);
+    } else {
+      netAmountInGroupCurrency = Number(preapprovalDetails.curPaymentsAmount) - Number(paymentMethod.data.curPaymentsAmount);
+    }
+
+    function createTransaction() {
+      return models.Transaction.create({
+        netAmountInGroupCurrency,
+        ExpenseId: expense.id,
+        // TODO remove #postmigration, info redundant with joined tables?
+        type: expenseType,
+        amount: -expense.amount/100,
+        currency: expense.currency,
+        description: expense.title,
+        status: 'REIMBURSED',
+        reimbursedAt: new Date(),
+        UserId,
+        GroupId: expense.GroupId,
+        payoutMethod
+        // end TODO remove #postmigration
+      });
+    }
+
+    function storePreapprovalDetails() {
+      paymentMethod.data = preapprovalDetails;
+      return paymentMethod.save();
+    }
+
+    return createTransaction()
+    .tap(() => storePreapprovalDetails())
     .tap(t => paymentMethod ? t.setPaymentMethod(paymentMethod) : null)
     .then(t => createNewTransactionActivity(t, paymentResponse, preapprovalDetails));
   }

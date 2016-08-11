@@ -9,6 +9,7 @@ const includes = require('lodash/collection/includes');
 const status = require('../constants/expense_status');
 const utils = require('../lib/utils');
 const roles = require('../constants/roles')
+const getPaymentDetails = require('../gateways/paypal').getPaymentDetails;
 
 /**
  * Controller.
@@ -203,7 +204,7 @@ module.exports = (app) => {
     const expense = req.expense;
     const payoutMethod = req.expense.payoutMethod;
     const isManual = !includes(models.PaymentMethod.payoutMethods, payoutMethod);
-    var paymentMethod, email, paymentResponse, preapprovalDetails;
+    var paymentMethod, email, paymentResponse, paymentDetails, preapprovalDetails;
 
     assertExpenseStatus(expense, status.APPROVED)
       .then(() => isManual ? null : getPaymentMethod())
@@ -211,10 +212,21 @@ module.exports = (app) => {
       .then(getBeneficiaryEmail)
       .tap(e => email = e)
       .then(() => isManual ? null : pay())
-      .tap(r => paymentResponse = r)
+      .tap(r => {
+        paymentResponse = r;
+        console.log("paymentResponse is", paymentResponse);
+        return paymentResponse;
+      })
       .then(() => isManual ? null : getPreapprovalDetails(paymentMethod.token))
       .tap(d => preapprovalDetails = d)
-      .then(() => createTransaction(payoutMethod, paymentMethod, expense, paymentResponse, preapprovalDetails, user.id))
+      .then(() => isManual ? null : getPaypalAccount(user.id))
+      .then(connectedAccount => isManual ? null : getPaymentDetails(connectedAccount, paymentResponse.paymentInfoList.paymentInfo[0].transactionId))
+      .tap(d => {
+        paymentDetails = d;
+        console.log("paymentDetails is", paymentDetails);
+        return paymentDetails;
+      })
+      .then(() => createTransaction(payoutMethod, paymentMethod, expense, paymentResponse, paymentDetails, preapprovalDetails, user.id))
       .tap(() => expense.setPaid(user.id))
       .tap(() => res.json(expense))
       .catch(err => next(formatError(err, paymentResponse)));
@@ -232,6 +244,17 @@ module.exports = (app) => {
       .tap(paymentMethod => {
         if (!paymentMethod) {
           throw new errors.BadRequest('This user has no confirmed paymentMethod linked with this service.');
+        }
+      });
+    }
+
+    function getPaypalAccount(UserId) {
+      console.log("getPaypalAccount", UserId);
+      return models.ConnectedAccount.find({
+        where: {
+          UserId,
+          provider: 'paypal',
+          deletedAt: null
         }
       });
     }

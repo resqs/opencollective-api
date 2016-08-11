@@ -1,6 +1,7 @@
 const paypal = require('paypal-rest-sdk');
 const async = require('async');
 const config = require('config');
+const Promise = require('bluebird');
 
 /**
  * We will pass the config in all the subsequent calls to be sure we don't
@@ -162,8 +163,24 @@ const execute = (connectedAccount, token, paymentId, PayerID, cb) => {
 
 }
 
+const getPaymentDetails = (connectedAccout, paymentId) => {
+  console.log("getPaymentDetails", paymentId, connectedAccout);
+
+  return new Promise((resolve, reject) => {
+    paypal.payment.get(paymentId, getConfig(connectedAccout), (err, res) => {
+      console.log("paypal getPaymentDetails response", res);
+      if (err) {
+        console.log("Paypal error:", err);
+        return reject(err);
+      }
+      return resolve(res);
+    });
+  });
+};
+
 module.exports = {
   createSubscription,
   createPayment,
-  execute
+  execute,
+  getPaymentDetails
 };
