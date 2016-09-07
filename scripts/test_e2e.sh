@@ -204,11 +204,7 @@ runProcess() {
          kill $PARENT 2>/dev/null" &
   echo "Started $REPO_NAME with PID $! and saving output to $LOG_FILE"
   # TODO should somehow detect when process is ready instead of fragile hard-coded delay
-  if [ "$NODE_ENV" = "development" ]; then
-    DELAY=5
-  else
-    DELAY=20
-  fi
+  DELAY=20
   echo "Waiting for $REPO_NAME startup during $DELAY seconds"
   # Wait for startup. Break down sleep into pieces to allow prospective kill signals to get trapped.
   for i in $(seq ${DELAY}); do sleep 1; done
