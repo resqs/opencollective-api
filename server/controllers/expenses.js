@@ -228,7 +228,8 @@ export const pay = (req, res, next) => {
 function assertExpenseStatus(expense, status) {
   if (status === status.PENDING && expense.status === status.APPROVED) {
     return Promise.reject(new errors.BadRequest(`Expense ${expense.id} is already approved.`));
-  } else if (status === status.PENDING && expense.status === status.REJECTED) {
+  } else if ((status === status.PENDING && expense.status === status.REJECTED) || 
+            (status === status.REJECTED && expense.status === status.APPROVED))  {
     return Promise.reject(new errors.BadRequest(`Expense ${expense.id} is already rejected.`));
   } else if (status === status.APPROVED && expense.status === status.PAID) {
     return Promise.reject(new errors.BadRequest(`Expense ${expense.id} is already paid.`));
