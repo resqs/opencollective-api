@@ -53,6 +53,8 @@ psql -U postgres
 If you haven't already: `export PATH=./node_modules/bin:$PATH`. You probably want to add
 that to your shell profile.
 
+## Start server
+`npm run start`
 
 ## Tests
 
@@ -66,9 +68,6 @@ export PGDATA='/usr/local/var/postgres'
 alias pgstart='pg_ctl -l $PGDATA/server.log start'
 alias pgstop='pg_ctl stop -m fast'
 ```
-
-## Start server
-`npm run start`
 
 ## Reset db with fixtures
 
