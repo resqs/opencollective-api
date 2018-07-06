@@ -582,14 +582,31 @@ const queries = {
         defaultValue: 'ASC',
         type: OrderDirectionType,
       },
-      limit: { type: GraphQLInt },
-      offset: { type: GraphQLInt }
+      limit: {
+        defaultValue: 10,
+        type: GraphQLInt
+      },
+      offset: {
+        defaultValue: 0,
+        type: GraphQLInt,
+      },
+      includeDeleted: {
+        defaultValue: false,
+        type: GraphQLBoolean,
+      },
+      includeInactive: {
+        defaultValue: false,
+        type: GraphQLBoolean,
+      },
     },
     async resolve(_, args) {
       const query = {
-        where: {},
-        limit: args.limit || 10,
-        include: []
+        where: {
+          isActive: !args.includeInactive,
+        },
+        limit: args.limit,
+        offset: args.offset,
+        include: [],
       };
 
       if (args.hostCollectiveSlug) {
@@ -628,9 +645,15 @@ const queries = {
         return { total, collectives, limit: args.limit, offset: args.offset };
       }
 
-      query.order = [[args.orderBy, args.orderDirection]];
+      if (args.includeDeleted) {
+        query.where.deletedAt = {
+          [Op.not]: null,
+        };
+      } else {
+        query.where.deletedAt = null;
+      }
 
-      if (args.offset) query.offset = args.offset;
+      query.order = [[args.orderBy, args.orderDirection]];
 
       // this will elminate the odd test accounts and older data we need to cleanup
       query.where.createdAt = {
