@@ -5,7 +5,7 @@ import { types } from '../../constants/collectives';
 import roles from '../../constants/roles';
 import activities from '../../constants/activities';
 
-const defaultTiers = (collectiveData) => {
+export const defaultTiers = (collectiveData) => {
   const tiers = collectiveData.tiers || [];
 
   if (collectiveData.HostCollectiveId === 858) { // if request coming from opencollective.com/meetups
