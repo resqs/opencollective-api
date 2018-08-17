@@ -19,6 +19,10 @@ import {
   TransactionExpenseType
 } from './TransactionInterface';
 
+import {
+  ApplicationType
+} from './Application';
+
 import query from './queries';
 import mutation from './mutations';
 
@@ -49,7 +53,8 @@ const Schema = new GraphQLSchema({
     EventCollectiveType,
     TransactionInterfaceType,
     TransactionOrderType,
-    TransactionExpenseType
+    TransactionExpenseType,
+    ApplicationType,
   ],
   query: Query,
   mutation: Mutation

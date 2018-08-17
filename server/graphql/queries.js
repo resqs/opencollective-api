@@ -28,6 +28,10 @@ import {
 } from './TransactionInterface';
 
 import {
+  ApplicationType
+} from './Application';
+
+import {
   UserType,
   TierType,
   ExpenseStatusType,
@@ -322,6 +326,20 @@ const queries = {
       }
       const CollectiveId = await fetchCollectiveId(args.collectiveSlug);
       return models.Update.findOne({ where: { CollectiveId, slug: args.updateSlug } });
+    }
+  },
+
+  Application: {
+    type: ApplicationType,
+    args: {
+      id: { type: GraphQLInt },
+    },
+    async resolve(_, args) {
+      if (args.id) {
+        return models.Application.findById(args.id);
+      } else {
+        return new Error("Please provide an id.");
+      }
     }
   },
 
