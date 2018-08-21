@@ -1,4 +1,4 @@
-import { pick, omit, get } from 'lodash';
+import { pick, omit, get, set } from 'lodash';
 import moment from 'moment';
 import uuidv4 from 'uuid/v4';
 
@@ -98,14 +98,27 @@ export function createOrder(order, loaders, remoteUser) {
     })
 
     // find or create user, check permissions to set `fromCollective`
-    .then(() => {
+    .then(async () => {
       if (order.user && order.user.email) {
-        return models.User.findOrCreateByEmail(order.user.email, {
+        const foundUser = await models.User.findOne({
+          where: {
+            email: order.user.email
+          }
+        });
+        if (get(foundUser,'id')) return foundUser;
+
+        const createdUser = await models.User.findOrCreateByEmail(order.user.email, {
           ...order.user,
           currency: order.currency,
           CreatedByUserId: remoteUser ? remoteUser.id : null,
         });
+        if (!get(order, 'paymentMethod.CollectiveId')) {
+          set(order, 'paymentMethod.CollectiveId', createdUser.CollectiveId);
+        }
+        return createdUser;
       }
+
+      
       if (remoteUser) return remoteUser;
     })
 

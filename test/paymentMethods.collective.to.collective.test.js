@@ -6,7 +6,7 @@ import * as store from './features/support/stores';
 
 const ORDER_TOTAL_AMOUNT = 1000;
 const STRIPE_FEE_STUBBED_VALUE = 300;
-
+dsasd
 const createOrderQuery = `
   mutation createOrder($order: OrderInputType!) {
     createOrder(order: $order) {

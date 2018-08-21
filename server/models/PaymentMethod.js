@@ -216,7 +216,6 @@ export default function(Sequelize, DataTypes) {
     if (order.interval && !get(this.features, 'recurring')) {
       throw new Error(`This ${name} doesn't support recurring payments`);
     }
-
     // If there is a monthly limit per member, the user needs to be a member or admin of the collective that owns the payment method
     if (this.monthlyLimitPerMember && !user.isMember(this.CollectiveId)) {
       throw new Error(`You don't have enough permissions to use this payment method (you need to be a member or an admin of the collective that owns this payment method)`);

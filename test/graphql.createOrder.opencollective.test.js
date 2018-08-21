@@ -59,6 +59,7 @@ describe('grahpql.createOrder.opencollective', () => {
           currency: 'USD',
           paymentMethodData: {
             customerId: 'new-user',
+            CollectiveId: userCollective.id,
             service: 'opencollective',
             type: 'prepaid',
             initialBalance: 10000,
@@ -90,28 +91,6 @@ describe('grahpql.createOrder.opencollective', () => {
         ({ hostCollective, collective } = await store.newCollectiveWithHost('test', 'USD', 'USD', 10));
       }); /* End of "beforeEach" */
 
-      it('should fail if payment method does not have a customer id', async () => {
-        // Given the following order with a payment method
-        const { order } = await store.newOrder({
-          from: userCollective,
-          to: collective,
-          amount: 2000,
-          currency: 'USD',
-          paymentMethodData: {
-            service: 'opencollective',
-            type: 'prepaid',
-            initialBalance: 10000,
-            currency: 'USD',
-            data: { HostCollectiveId: hostCollective.id },
-          }
-        });
-
-        // When the above order is executed; Then the transaction
-        // should be unsuccessful.
-        await expect(libpayments.executeOrder(user, order)).to.be.eventually.rejectedWith(
-          Error, 'Prepaid method must have a value for `customerId`');
-      }); /* End of "should fail if payment method does not have a customer id" */
-
       it('should fail if payment method does not have a host id', async () => {
         // Given the following order with a payment method
         const { order } = await store.newOrder({
@@ -121,64 +100,40 @@ describe('grahpql.createOrder.opencollective', () => {
           currency: 'USD',
           paymentMethodData: {
             customerId: 'new-user',
+            CollectiveId: userCollective.id,
             service: 'opencollective',
             type: 'prepaid',
             initialBalance: 10000,
             currency: 'USD',
           }
         });
-
         // When the above order is executed; Then the transaction
         // should be unsuccessful.
         await expect(libpayments.executeOrder(user, order)).to.be.eventually.rejectedWith(
-          Error, 'Prepaid method must have a value for `data.HostCollectiveId`');
+          Error, 'Prepaid payment method must have a value for `data.HostCollectiveId`');
       }); /* End of "should fail if payment method does not have a host id" */
 
       it('should fail if payment method from someone else is used', async () => {
         // Given the following order with a payment method
-        const { order } = await store.newOrder({
+        // const { anotherUser, anotherUserCollective } = await store.newUser('another user');
+        // It should be unsuccessful as the payment method will fail to be created.
+        await expect(store.newOrder({
           from: userCollective,
           to: collective,
           amount: 2000,
           currency: 'USD',
           paymentMethodData: {
-            customerId: 'a-different-user',
+            customerId: collective.slug, // different than fromCollective
+            CollectiveId: collective.id, // different than fromCollective
             service: 'opencollective',
             type: 'prepaid',
             initialBalance: 10000,
             currency: 'USD',
             data: { HostCollectiveId: hostCollective.id },
           }
-        });
-
-        // When the above order is executed; Then the transaction
-        // should be unsuccessful.
-        await expect(libpayments.executeOrder(user, order)).to.be.eventually.rejectedWith(
-          Error, 'Prepaid method can only be used by the organization that received it');
+        })).to.be.eventually.rejectedWith(
+          Error, `You don't have enough permissions to use this payment method (you need to be an admin of the collective that owns this payment method)`);
       }); /* End of "should fail if payment method from someone else is used" */
-
-      it('should fail if from collective and collective are from different hosts ', async () => {
-        // Given the following order with a payment method
-        const { order } = await store.newOrder({
-          from: userCollective,
-          to: collective,
-          amount: 2000,
-          currency: 'USD',
-          paymentMethodData: {
-            customerId: 'new-user',
-            service: 'opencollective',
-            type: 'prepaid',
-            initialBalance: 10000,
-            currency: 'USD',
-            data: { HostCollectiveId: 2000 },
-          }
-        });
-
-        // When the above order is executed; Then the transaction
-        // should be unsuccessful.
-        await expect(libpayments.executeOrder(user, order)).to.be.eventually.rejectedWith(
-          Error, 'Prepaid method can only be used in collectives from the same host');
-      }); /* End of "should fail if from collective and collective are from different hosts" */
 
       it('should fail to place an order if there is not enough balance', () => {
       }); /* End of "should fail to place an order if there is not enough balance" */
@@ -239,16 +194,17 @@ describe('grahpql.createOrder.opencollective', () => {
           name: 'test giftcard',
           currency: 'BRL',
           monthlyLimitPerMember: 3000,
-          CollectiveId: hostCollective.id,
-          CreatedByUserId: hostAdmin.id,
+          CollectiveId: user.CollectiveId,
+          CreatedByUserId: user.id,
         });
 
-        // And given an order
+        // And given an order with amount higher than the gift card that was previously created
         const order = {
           collective: { id: collective.id },
           fromCollective: { id: userCollective.id },
           paymentMethod: {
             service: 'opencollective',
+            CollectiveId: user.CollectiveId,
             type: 'giftcard',
             uuid: pm.uuid,
             token: pm.token,
@@ -258,13 +214,12 @@ describe('grahpql.createOrder.opencollective', () => {
         };
 
         const result = await utils.graphqlQuery(createOrderQuery, { order }, user);
-
         expect(result.errors).to.exist;
         expect(result.errors[0].message).to.equal(
           'The total amount of this order (R$50) is higher than your monthly spending limit on this payment method (opencollective:giftcard) (R$30)');
       }); /* End of "should error if the card does not have enough balance" */
 
-      it('should error if the card does not have enough balance', async () => {
+      it('should create an order if the gift card has enough balance', async () => {
         // Given a giftcard with 50 BRL
         const [pm] = await giftcard.createGiftcards([{
           count: 1,
@@ -276,14 +231,17 @@ describe('grahpql.createOrder.opencollective', () => {
           CollectiveId: hostCollective.id,
           CreatedByUserId: hostAdmin.id,
         });
+        // Add user(that will execute the order) as the admin of the Collective
+        hostCollective.addUserWithRole(user, 'ADMIN');
 
-        // And given an order
+        // And given an order with amount less or equal than the amount on the gift card 
         const order = {
           collective: { id: collective.id },
           fromCollective: { id: userCollective.id },
           paymentMethod: {
             service: 'opencollective',
             type: 'giftcard',
+            CollectiveId: hostCollective.id,
             uuid: pm.uuid,
             token: pm.token,
           },
@@ -320,7 +278,7 @@ describe('grahpql.createOrder.opencollective', () => {
         const originalPm = await models.PaymentMethod.findOne({ where: { token: pm.token } });
         expect(originalPm.archivedAt).to.not.be.null;
 
-      }); /* End of "should error if the card does not have enough balance" */
+      }); /* End of "should create an order if the gift card has enough balance" */
 
     }); /* End of "#processOrder" */
 

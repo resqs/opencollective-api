@@ -210,6 +210,7 @@ export async function newOrder(opt) {
   });
   await order.setPaymentMethod(paymentMethodData || {
     token: 'tok_123456781234567812345678',
+    CollectiveId: from.id,
     currency,
   });
   return { order };

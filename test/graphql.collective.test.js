@@ -1,6 +1,5 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
 
 import models from '../server/models';
 import { appStripe } from '../server/paymentProviders/stripe/gateway';
@@ -68,7 +67,6 @@ describe('graphql.collective.test.js', () => {
       });
       await expenses.payExpense(hostAdmin, expense.id, 0);
     }
-
     // And given a tier object
     await models.Tier.create({
       name: "backer",
@@ -162,11 +160,9 @@ describe('graphql.collective.test.js', () => {
         __typename
       }
     }`;
-
     const result = await utils.graphqlQuery(query, { slug: "apex" });
     result.errors && console.error(result.errors);
     expect(result.errors).to.not.exist;
-
     const collective = result.data.Collective;
     expect(collective.website).to.equal('http://apex.run');
     expect(collective.members).to.have.length(23);

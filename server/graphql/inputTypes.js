@@ -46,6 +46,8 @@ export const PaymentMethodInputType = new GraphQLInputObjectType({
     token: { type: GraphQLString },
     service: { type: GraphQLString },
     type: { type: GraphQLString, description: "creditcard or bitcoin" },
+    CollectiveId: { type: GraphQLInt },
+    CreatedByUserId: { type: GraphQLInt },
     customerId: { type: GraphQLString },
     data: { type: GraphQLJSON },
     name: { type: GraphQLString },

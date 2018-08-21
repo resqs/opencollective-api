@@ -1182,6 +1182,18 @@ export const PaymentMethodType = new GraphQLObjectType({
           return paymentMethod.uuid;
         }
       },
+      CollectiveId: {
+        type: GraphQLInt,
+        resolve(paymentMethod) {
+          return paymentMethod.CollectiveId;
+        }
+      },
+      customerId: {
+        type: GraphQLString,
+        resolve(paymentMethod) {
+          return paymentMethod.customerId;
+        }
+      },
       createdAt: {
         type: GraphQLString,
         resolve(paymentMethod) {

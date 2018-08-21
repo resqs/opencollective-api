@@ -155,10 +155,12 @@ describe('createOrder', () => {
         twitterHandle: "johnsmith",
         newsletterOptIn: true,
       };
+
       // When the query is executed
       const res = await utils.graphqlQuery(createOrderQuery, { order });
-
+      console.log(res.errors);
       // Then there should be no errors
+      res.errors && console.error(res.errors);
       expect(res.errors).to.not.exist;
 
       const fromCollective = res.data.createOrder.fromCollective;
@@ -312,7 +314,7 @@ describe('createOrder', () => {
       const xdamman = (await store.newUser('xdamman')).user;
       // And the parameters for the query
       order.fromCollective = { id: xdamman.CollectiveId };
-      order.paymentMethod = { ...constants.paymentMethod, token: 'tok_1B5j8xDjPFcHOcTm3ogdnq0K' };
+      order.paymentMethod = { ...constants.paymentMethod, CollectiveId: xdamman.CollectiveId, token: 'tok_1B5j8xDjPFcHOcTm3ogdnq0K' };
       order.interval = 'month';
       order.totalAmount = 1000;
       order.collective = { id: brusselstogether.id };
@@ -343,7 +345,7 @@ describe('createOrder', () => {
       order.collective = { id: brusselstogether.id };
       order.user = { firstName: "John", lastName: "Smith", email: "jsmith@email.com" };
       order.fromCollective = { name: "NewCo", website: "newco.com" };
-      order.paymentMethod = { ...constants.paymentMethod, token: 'tok_3B5j8xDjPFcHOcTm3ogdnq0K' };
+      order.paymentMethod = { ...constants.paymentMethod, /* CollectiveId: xdamman.CollectiveId, */ token: 'tok_3B5j8xDjPFcHOcTm3ogdnq0K' };
       // When the order is created
       const res = await utils.graphqlQuery(createOrderQuery, { order });
       res.errors && console.error(res.errors);
@@ -375,7 +377,7 @@ describe('createOrder', () => {
       // And the order parameters
       order.fromCollective = { id: newco.id };
       order.collective = { id: brusselstogether.id };
-      order.paymentMethod = { ...constants.paymentMethod, token: 'tok_4B5j8xDjPFcHOcTm3ogdnq0K' };
+      order.paymentMethod = { ...constants.paymentMethod, CollectiveId: newco.id, token: 'tok_4B5j8xDjPFcHOcTm3ogdnq0K' };
       // Should fail if not an admin or member of the organization
       let res = await utils.graphqlQuery(createOrderQuery, { order }, duc);
       expect(res.errors).to.exist;
@@ -516,6 +518,7 @@ describe('createOrder', () => {
       it("succeeds", async () => {
         order.totalAmount = 20000;
         const res = await utils.graphqlQuery(createOrderQuery, { order }, hostAdmin);
+        res.errors && console.error(res.errors);
         expect(res.errors).to.not.exist;
       })
     });
